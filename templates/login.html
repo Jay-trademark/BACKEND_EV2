@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Store - Iniciar Sesión</title>
+
+    <!-- CSS Tema Bootswatch Superhero (Bootstrap 5) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/superhero/bootstrap.min.css">
+    <!-- Iconos de Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        .login-card {
+            border: 1px solid #4e5d6c;
+            border-radius: 8px;
+            background-color: #2b3e50;
+        }
+        .login-header {
+            background-color: #324c63;
+            border-bottom: 1px solid #4e5d6c;
+            padding: 18px 20px;
+            border-top-left-radius: 7px;
+            border-top-right-radius: 7px;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100 bg-dark text-light">
+
+    <!-- Navbar Superior -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold fst-italic text-uppercase" href="/">
+                <i class="bi bi-cpu-fill text-warning me-2"></i>PC Hardware Retail
+            </a>
+            <div class="ms-auto">
+                <a href="/" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver al Catálogo</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Formulario de Login Centrado -->
+    <main class="container my-auto py-4" style="max-width: 420px;">
+        <div class="card login-card shadow-lg">
+            
+            <div class="login-header text-center">
+                <h4 class="m-0 text-warning fw-bold">
+                    <i class="bi bi-person-lock me-2"></i>Iniciar Sesión
+                </h4>
+                <small class="text-muted">Autenticación JWT (Cliente / Administrador)</small>
+            </div>
+
+            <div class="card-body p-4">
+                <!-- Alerta de Error -->
+                <div id="error-alert" class="alert alert-danger d-none py-2" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i><span id="error-msg">Credenciales incorrectas.</span>
+                </div>
+
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label text-light">Usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" id="username" placeholder="Tu usuario" required autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label text-light">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-key"></i></span>
+                            <input type="password" class="form-control bg-dark text-light border-secondary" id="password" placeholder="••••••••" required autocomplete="current-password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Pie de Página Semi-Formal (Requisito Obligatorio) -->
+    <footer class="bg-dark text-light border-top border-secondary mt-auto py-3">
+        <div class="container text-center">
+            <p class="mb-1 fw-bold">Desarrollo Backend - Evaluación Evaluada</p>
+            <p class="small text-muted mb-0">
+                <strong>Alumno:</strong> {{ alumno_nombre|default:"Juan Pérez" }} &nbsp;|&nbsp;
+                <strong>Sección:</strong> {{ alumno_seccion|default:"DCI-01" }} &nbsp;|&nbsp;
+                <strong>Año:</strong> {{ alumno_anio|default:"2026" }}
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Lógica de Inicio de Sesión y Almacenamiento de Token JWT -->
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const alertBox = document.getElementById('error-alert');
+            const errorMsg = document.getElementById('error-msg');
+
+            // Petición al endpoint JWT de SimpleJWT
+            fetch('/api/token/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: usernameInput,
+                    password: passwordInput
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Usuario o contraseña incorrectos.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Almacena los tokens en el almacenamiento del navegador
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+
+                alertBox.classList.add('d-none');
+                alert('¡Inicio de sesión exitoso!');
+                window.location.href = '/'; // Redirige al catálogo principal
+            })
+            .catch(error => {
+                errorMsg.innerText = error.message;
+                alertBox.classList.remove('d-none');
+            });
+        });
+    </script>
+</body>
+</html>

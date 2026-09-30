@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Store - Catálogo de Componentes</title>
+    
+    <!-- CSS Tema Bootswatch Superhero (Bootstrap 5) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/superhero/bootstrap.min.css">
+    <!-- Iconos de Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        /* Ajuste para simular las proporciones del placeholder de la imagen (220x280) */
+        .product-img-box {
+            width: 100%;
+            height: 250px;
+            background-color: #324c63;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #869ab8;
+            border-bottom: 1px solid #4e5d6c;
+        }
+        .card-footer-custom {
+            background-color: #2b3e50;
+            border-top: 1px solid #4e5d6c;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Navbar Superior / Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold fst-italic text-uppercase" href="{% url 'index' %}">
+                <i class="bi bi-cpu-fill text-warning me-2"></i>PC Hardware Retail
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto me-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/"><i class="bi bi-house-door me-1"></i>Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/docs/" target="_blank"><i class="bi bi-code-slash me-1"></i>API Docs</a>
+                    </li>
+                </ul>
+                <!-- Indicador de Carro Persistente -->
+                <a href="#carroModal" class="btn btn-outline-info btn-sm" data-bs-toggle="modal">
+                    <i class="bi bi-cart3 me-1"></i>Carro <span class="badge bg-warning text-dark" id="cart-count">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <div class="container-fluid flex-grow-1 px-4">
+        <div class="row">
+            
+            <!-- Barra Lateral de Navegación / Categorías -->
+            <aside class="col-md-3 col-lg-2 mb-4">
+                <h6 class="fw-bold text-uppercase text-light border-bottom pb-2 mb-3">Navegación</h6>
+                <div class="list-group sidebar-menu shadow-sm">
+                    <a href="?" class="list-group-item list-group-item-action {% if not categoria_actual %}active{% endif %}">
+                        Todas las Categorías
+                    </a>
+                    <!-- Loop dinámico de Categorías desde Django -->
+                    {% for cat in categorias %}
+                    <a href="?categoria={{ cat.id }}" class="list-group-item list-group-item-action {% if categoria_actual == cat.id %}active{% endif %}">
+                        {{ cat.nombre }}
+                    </a>
+                    {% empty %}
+                    <!-- Opciones de demostración -->
+                    <a href="#" class="list-group-item list-group-item-action active">Procesadores</a>
+                    <a href="#" class="list-group-item list-group-item-action">Tarjetas de Video</a>
+                    <a href="#" class="list-group-item list-group-item-action">Memorias RAM</a>
+                    <a href="#" class="list-group-item list-group-item-action">Almacenamiento NVMe</a>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <!-- Área Principal de Productos / Stock -->
+            <main class="col-md-9 col-lg-10">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="text-light m-0">
+                        {% if categoria_nombre %}{{ categoria_nombre }}{% else %}Catálogo de Componentes{% endif %}
+                    </h3>
+                    <span class="badge bg-secondary fs-6">Stock en tiempo real (PostgreSQL)</span>
+                </div>
+
+                <!-- Grid de Productos (3 Columnas acorde a la maqueta) -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    
+                    <!-- Iteración dinámica de productos desde Django ORM / API REST -->
+                    {% for prod in productos %}
+                    <div class="col">
+                        <div class="card h-100 shadow border-secondary">
+                            
+                            <!-- Box Placeholder o Imagen del Producto (220 x 280) -->
+                            <div class="product-img-box">
+                                <i class="bi bi-box-seam display-4 mb-2"></i>
+                                <span>220 x 280</span>
+                                <small class="text-muted mt-1">SKU: {{ prod.sku }}</small>
+                            </div>
+
+                            <div class="card-body">
+                                <h5 class="card-title text-warning mb-1">{{ prod.nombre }}</h5>
+                                <p class="card-text text-muted small mb-2">Marca: {{ prod.marca }}</p>
+                                
+                                <!-- Indicador Visual de Stock Físico -->
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-light">Disponibilidad:</small>
+                                    {% if prod.stock > 0 %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>{{ prod.stock }} un.</span>
+                                    {% else %}
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Agotado</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Footer de la Tarjeta (Precio, Detalles, Botón Order/Agregar) -->
+                            <div class="card-footer card-footer-custom d-flex justify-content-between align-items-center py-2 px-3">
+                                <span class="fs-5 fw-bold text-light">${{ prod.precio_unitario }}</span>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-secondary border-secondary" title="Ver Detalles">
+                                        Detalles
+                                    </button>
+                                    <button type="button" class="btn btn-success" {% if prod.stock == 0 %}disabled{% endif %} onclick="agregarAlCarro('{{ prod.id }}')">
+                                        Order
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    {% empty %}
+                    <!-- Tarjeta estática de ejemplo si no hay datos en la DB -->
+                    <div class="col">
+                        <div class="card h-100 shadow border-secondary">
+                            <div class="product-img-box">
+                                <i class="bi bi-gpu-card display-4 mb-2"></i>
+                                <span>220 x 280</span>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title text-warning mb-1">NVIDIA RTX 4070 Super</h5>
+                                <p class="card-text text-muted small mb-2">Marca: ASUS</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-light">Disponibilidad:</small>
+                                    <span class="badge bg-success">15 un.</span>
+                                </div>
+                            </div>
+                            <div class="card-footer card-footer-custom d-flex justify-content-between align-items-center py-2 px-3">
+                                <span class="fs-5 fw-bold text-light">$699.99</span>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-secondary border-secondary">Details</button>
+                                    <button type="button" class="btn btn-success">Order</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Pie de Página Semi-Formal (Obligatorio Evaluación) -->
+    <footer class="bg-dark text-light border-top border-secondary mt-5 py-3">
+        <div class="container text-center">
+            <p class="mb-1 fw-bold">Desarrollo Backend - Evaluación Evaluada</p>
+            <p class="small text-muted mb-0">
+                <strong>Alumno:</strong> {{ alumno_nombre|default:"Juan Pérez" }} &nbsp;|&nbsp;
+                <strong>Sección:</strong> {{ alumno_seccion|default:"DCI-01" }} &nbsp;|&nbsp;
+                <strong>Año:</strong> {{ alumno_anio|default:"2026" }}
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script básico para conexión con API de Django REST Framework -->
+    <script>
+        function agregarAlCarro(productoId) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                alert('Debes iniciar sesión como Cliente para agregar productos al carro.');
+                return;
+            }
+
+            fetch('/api/carro/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    producto: productoId,
+                    cantidad: 1
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Producto añadido al carro persistente.');
+                } else {
+                    alert('Error al añadir al carro.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
